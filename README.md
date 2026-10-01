@@ -82,3 +82,4 @@ pasada, en tiempo O(n).
 - caracteres no permitidos
 
 Cada mensaje indica la posición exacta dentro de la expresión.
+
