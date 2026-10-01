@@ -1,26 +1,20 @@
-# Estudio de caso 1 — Análisis de cadenas de impresión con una pila
+# Estudio de caso 1: análisis de cadenas de impresión con una pila
 
-Universidad CENFOTEC · Escuela de Software
-Curso **SOFT-10 — Estructuras de Datos** · Sección SCV5 · Periodo C3-2026
+Universidad CENFOTEC, Escuela de Software
+Curso SOFT-10, Estructuras de Datos. Sección SCV5, periodo C3-2026
 Docente facilitador: Romario Salas Cerdas
-
 Estudiante: Braden Lee Knuter Cordoba
-Carné: ______________________________
 
 ## Descripción
 
-Programa en Java que analiza **cadenas de impresión** y determina si están bien
-formadas, utilizando una **pila** implementada con nodos enlazados (sin clases de
-colección del lenguaje).
+Programa en Java que analiza cadenas de impresión y determina si están bien
+formadas, usando una pila implementada con nodos enlazados, sin clases de
+colección del lenguaje.
 
-Los tokens que contempla son los que indica la consigna:
-
-- cadenas literales delimitadas por comillas dobles — `"Hola"`
-- variables de cadena (identificadores) — `nombre`
-- el operador de concatenación — `+`
-
-y, además, los paréntesis de agrupación, que son los que obligan a recordar
-contextos abiertos y justifican el uso de la pila.
+Los tokens que contempla son los que indica la consigna: cadenas literales
+delimitadas por comillas dobles (`"Hola"`), variables de cadena (`nombre`) y el
+operador de concatenación (`+`). A ellos se agregan los paréntesis de
+agrupación, que obligan a recordar contextos abiertos y hacen necesaria la pila.
 
 Ejemplo de expresión válida:
 
@@ -28,26 +22,26 @@ Ejemplo de expresión válida:
 "Hola, " + nombre + ("!" + salto)
 ```
 
-La pila almacena los delimitadores de apertura: cada comilla o paréntesis que se
+La pila almacena los delimitadores de apertura. Cada comilla o paréntesis que se
 abre se inserta con `push` y se retira con `pop` cuando aparece su cierre. Si al
-terminar el recorrido la pila no está vacía, quedó un delimitador sin cerrar y se
-informa su posición exacta.
+terminar el recorrido la pila no está vacía, quedó un delimitador sin cerrar y
+el programa informa su posición exacta.
 
 ## Estructura del proyecto
 
 ```
 src/
   Nodo.java                 Nodo de la pila: un caracter y su posicion en la expresion
-  Pila.java                 Pila LIFO con nodos enlazados (push, pop, peek, ...)
+  Pila.java                 Pila LIFO con nodos enlazados
   AnalizadorCadenas.java    Logica del analisis de la cadena de impresion
   Main.java                 Entorno de ejecucion: main() y menu()
 docs/
-  EstudioDeCaso1_Pilas_AnalisisCadenasDeImpresion.pdf   Documentacion de la investigacion
+  EstudioDeCaso1_Pilas_AnalisisCadenasDeImpresion.pdf
 ```
 
 ## Compilación y ejecución
 
-Requiere un JDK 17 o superior (se probó con el JDK 26).
+Requiere un JDK 17 o superior. Se probó con el JDK 26.
 
 ```bash
 javac -d out src/*.java
@@ -57,18 +51,18 @@ java -cp out Main
 ## Menú del programa
 
 1. Analizar una cadena de impresión
-2. Analizar una cadena mostrando la traza de la pila (`push` / `pop` paso a paso)
-3. Ejecutar los ejemplos de prueba (expresiones válidas e inválidas)
-4. Operar la pila manualmente (`push` / `pop` / `peek` / mostrar / vaciar)
+2. Analizar una cadena mostrando la traza de la pila, paso a paso
+3. Ejecutar los ejemplos de prueba, válidos e inválidos
+4. Operar la pila manualmente: push, pop, peek, mostrar y vaciar
 5. Salir
 
-## Operaciones de la clase `Pila`
+## Operaciones de la clase Pila
 
 | Método | Descripción | Costo |
 | --- | --- | --- |
 | `push(char, int)` | Inserta un carácter en la cima | O(1) |
-| `pop()` | Retira y devuelve la cima; `null` si está vacía | O(1) |
-| `peek()` | Consulta la cima sin retirarla; `null` si está vacía | O(1) |
+| `pop()` | Retira y devuelve la cima, o `null` si está vacía | O(1) |
+| `peek()` | Consulta la cima sin retirarla, o `null` si está vacía | O(1) |
 | `estaVacia()` | Indica si no hay elementos | O(1) |
 | `getTamano()` | Cantidad de elementos | O(1) |
 | `vaciar()` | Retira todos los elementos | O(1) |
