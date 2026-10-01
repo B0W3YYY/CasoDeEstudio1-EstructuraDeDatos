@@ -11,6 +11,7 @@ public class Main {
 
     private static Scanner entrada = new Scanner(System.in);
     private static Pila pilaManual = new Pila();   // pila para las pruebas manuales
+    private static AnalizadorCadenas lector = new AnalizadorCadenas();   // reconoce los tokens escritos a mano
 
     public static void main(String[] args) {
         System.out.println("===================================================");
@@ -128,8 +129,8 @@ public class Main {
         boolean enSubmenu = true;
         while (enSubmenu) {
             System.out.println("\n--------------- OPERACIONES DE LA PILA ------------");
-            System.out.println(" 1. push (insertar un caracter)");
-            System.out.println(" 2. pop (retirar el caracter de la cima)");
+            System.out.println(" 1. push (insertar un token)");
+            System.out.println(" 2. pop (retirar el token de la cima)");
             System.out.println(" 3. peek (consultar la cima)");
             System.out.println(" 4. Mostrar la pila");
             System.out.println(" 5. Vaciar la pila");
@@ -144,13 +145,15 @@ public class Main {
             int opcion = leerOpcion();
             switch (opcion) {
                 case 1:
-                    System.out.print("Caracter por insertar: ");
-                    String texto = leerLinea();
-                    if (texto.length() != 1) {
-                        System.out.println("ERROR: debe escribir exactamente un caracter.");
+                    System.out.println("Escriba un token: una cadena literal (\"Hola\"),");
+                    System.out.print("una variable (nombre), + o un parentesis: ");
+                    Nodo token = lector.convertirEnToken(leerLinea());
+                    if (token == null) {
+                        System.out.println("ERROR: debe escribir exactamente un token valido.");
                     } else {
-                        pilaManual.push(texto.charAt(0), pilaManual.getTamano());
-                        System.out.println("Caracter insertado.");
+                        pilaManual.push(token);
+                        System.out.println("Se inserto el token " + token
+                                + " (" + token.getTipo().getDescripcion() + ").");
                         pilaManual.mostrar();
                     }
                     break;
@@ -159,7 +162,7 @@ public class Main {
                     if (retirado == null) {
                         System.out.println("La pila esta vacia, no hay nada que retirar.");
                     } else {
-                        System.out.println("Se retiro el caracter '" + retirado.getDato() + "'.");
+                        System.out.println("Se retiro el token " + retirado + ".");
                         pilaManual.mostrar();
                     }
                     break;
@@ -168,7 +171,8 @@ public class Main {
                     if (cima == null) {
                         System.out.println("La pila esta vacia, no hay cima.");
                     } else {
-                        System.out.println("En la cima esta el caracter '" + cima.getDato() + "'.");
+                        System.out.println("En la cima esta el token " + cima
+                                + " (" + cima.getTipo().getDescripcion() + ").");
                     }
                     break;
                 case 4:

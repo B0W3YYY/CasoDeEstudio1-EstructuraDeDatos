@@ -1,7 +1,8 @@
 /**
- * Pila implementada con nodos enlazados (sin usar librerias de colecciones).
+ * Pila de tokens implementada con nodos enlazados (sin usar librerias de
+ * colecciones).
  *
- * La pila sigue la politica LIFO (Last In, First Out): el ultimo caracter
+ * La pila sigue la politica LIFO (Last In, First Out): el ultimo token
  * que entra es el primero que sale. Todas las operaciones trabajan
  * unicamente sobre la cima, por lo que su costo es constante O(1).
  */
@@ -16,9 +17,8 @@ public class Pila {
         this.tamano = 0;
     }
 
-    /** Inserta un caracter en la cima de la pila. */
-    public void push(char dato, int posicion) {
-        Nodo nuevo = new Nodo(dato, posicion);
+    /** Inserta un token en la cima de la pila. */
+    public void push(Nodo nuevo) {
         nuevo.setSiguiente(cima);  // el nuevo nodo apunta a la cima anterior
         cima = nuevo;              // el nuevo nodo pasa a ser la cima
         tamano++;
@@ -63,7 +63,7 @@ public class Pila {
 
     /**
      * Devuelve el contenido de la pila como texto, de la cima hacia la base.
-     * Ejemplo: [cima] " ( [base]
+     * Ejemplo: [cima] + | "Hola, " [base]
      */
     public String contenido() {
         if (estaVacia()) {
@@ -72,10 +72,13 @@ public class Pila {
         String texto = "[cima] ";
         Nodo actual = cima;
         while (actual != null) {
-            texto = texto + actual.getDato() + " ";
+            texto = texto + actual;
+            if (actual.getSiguiente() != null) {
+                texto = texto + " | ";
+            }
             actual = actual.getSiguiente();
         }
-        return texto + "[base]";
+        return texto + " [base]";
     }
 
     /** Muestra en consola el estado actual de la pila. */

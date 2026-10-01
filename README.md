@@ -15,7 +15,7 @@ colección del lenguaje.
 Los tokens que contempla son los que indica la consigna: cadenas literales
 delimitadas por comillas dobles (`"Hola"`), variables de cadena (`nombre`) y el
 operador de concatenación (`+`). A ellos se agregan los paréntesis de
-agrupación, que obligan a recordar contextos abiertos y hacen necesaria la pila.
+agrupación. Cada nodo de la pila guarda uno de estos tokens.
 
 Ejemplo de expresión válida:
 
@@ -23,16 +23,24 @@ Ejemplo de expresión válida:
 "Hola, " + nombre + ("!" + salto)
 ```
 
-La pila almacena los delimitadores de apertura. Cada comilla o paréntesis que se
-abre se inserta con `push` y se retira con `pop` cuando aparece su cierre. Si al
-terminar el recorrido la pila no está vacía, quedó un delimitador sin cerrar y
-el programa informa su posición exacta.
+La expresión se lee token por token y cada token se inserta en la pila con
+`push`. Cuando la cima forma un patrón completo, esos nodos se retiran con `pop`
+y se reemplazan por un solo nodo `EXPR`:
+
+```
+operando + operando   ->  EXPR
+( operando )          ->  EXPR
+```
+
+La cadena es válida si al terminar queda un solo operando en la pila. Si queda
+un paréntesis sin cerrar, el programa informa su posición exacta.
 
 ## Estructura del proyecto
 
 ```
 src/
-  Nodo.java                 Nodo de la pila: un caracter y su posicion en la expresion
+  TipoToken.java            Tipos de token: literal, variable, +, parentesis y EXPR
+  Nodo.java                 Nodo de la pila: un token (tipo, texto y posicion)
   Pila.java                 Pila LIFO con nodos enlazados
   AnalizadorCadenas.java    Logica del analisis de la cadena de impresion
   Main.java                 Entorno de ejecucion: main() y menu()
@@ -54,14 +62,14 @@ java -cp out Main
 1. Analizar una cadena de impresión
 2. Analizar una cadena mostrando la traza de la pila, paso a paso
 3. Ejecutar los ejemplos de prueba, válidos e inválidos
-4. Operar la pila manualmente: push, pop, peek, mostrar y vaciar
+4. Operar la pila manualmente escribiendo tokens: push, pop, peek, mostrar y vaciar
 5. Salir
 
 ## Operaciones de la clase Pila
 
 | Método | Descripción | Costo |
 | --- | --- | --- |
-| `push(char, int)` | Inserta un carácter en la cima | O(1) |
+| `push(Nodo)` | Inserta un token en la cima | O(1) |
 | `pop()` | Retira y devuelve la cima, o `null` si está vacía | O(1) |
 | `peek()` | Consulta la cima sin retirarla, o `null` si está vacía | O(1) |
 | `estaVacia()` | Indica si no hay elementos | O(1) |
@@ -83,4 +91,3 @@ pasada, en tiempo O(n).
 - caracteres no permitidos
 
 Cada mensaje indica la posición exacta dentro de la expresión.
-

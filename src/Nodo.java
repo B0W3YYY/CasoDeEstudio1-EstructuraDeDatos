@@ -2,28 +2,35 @@
  * Nodo de la pila.
  *
  * Segun la consigna, para el analisis de cadenas de impresion cada nodo
- * almacena un caracter que forma parte de la cadena por analizar
- * (una comilla o un parentesis de apertura, por ejemplo).
+ * es un token que forma parte de la cadena por analizar: una cadena
+ * literal ("Hola"), una variable de cadena (nombre), el operador de
+ * concatenacion (+) o un parentesis.
  *
- * Ademas del caracter se guarda la posicion que ese caracter ocupa dentro
- * de la expresion, dato que permite informar al usuario el lugar exacto
- * donde se encuentra un delimitador sin cerrar.
+ * Ademas del tipo y del texto del token se guarda la posicion donde
+ * empieza dentro de la expresion, dato que permite informar al usuario
+ * el lugar exacto de un error.
  */
 public class Nodo {
 
-    private char dato;        // caracter almacenado en el nodo
-    private int posicion;     // indice del caracter dentro de la expresion
+    private TipoToken tipo;   // clase de token almacenado
+    private String lexema;    // texto del token tal como aparece en la expresion
+    private int posicion;     // indice donde empieza el token dentro de la expresion
     private Nodo siguiente;   // referencia al nodo que esta debajo en la pila
 
-    /** Crea un nodo con el caracter y la posicion indicados. */
-    public Nodo(char dato, int posicion) {
-        this.dato = dato;
+    /** Crea un nodo con el token indicado. */
+    public Nodo(TipoToken tipo, String lexema, int posicion) {
+        this.tipo = tipo;
+        this.lexema = lexema;
         this.posicion = posicion;
         this.siguiente = null;
     }
 
-    public char getDato() {
-        return dato;
+    public TipoToken getTipo() {
+        return tipo;
+    }
+
+    public String getLexema() {
+        return lexema;
     }
 
     public int getPosicion() {
@@ -36,5 +43,17 @@ public class Nodo {
 
     public void setSiguiente(Nodo siguiente) {
         this.siguiente = siguiente;
+    }
+
+    /**
+     * Texto con el que se muestra el nodo dentro de la pila. Una expresion
+     * ya reconocida se muestra como EXPR para que la pila se lea con facilidad.
+     */
+    @Override
+    public String toString() {
+        if (tipo == TipoToken.EXPRESION) {
+            return "EXPR";
+        }
+        return lexema;
     }
 }
