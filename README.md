@@ -4,7 +4,7 @@ Universidad CENFOTEC · Escuela de Software
 Curso **SOFT-10 — Estructuras de Datos** · Sección SCV5 · Periodo C3-2026
 Docente facilitador: Romario Salas Cerdas
 
-Estudiante: ______________________________
+Estudiante: Braden Lee Knuter Cordoba
 Carné: ______________________________
 
 ## Descripción
