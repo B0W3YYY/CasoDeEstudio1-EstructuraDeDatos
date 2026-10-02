@@ -1,126 +1,46 @@
 /**
- * Analizador de cadenas de impresion.
+ * Analiza cadenas de impresion como:  "Hola, " + nombre + ("!" + salto)
  *
- * Revisa expresiones del tipo que recibe una instruccion de impresion,
- * formadas por tres clases de tokens:
+ * Tokens: cadenas literales, variables, el operador + y parentesis.
+ * Cada token entra en la pila y, cuando la cima forma un patron completo,
+ * ese patron se reemplaza por un solo nodo EXPR:
  *
- *   - cadenas literales, delimitadas por comillas dobles:  "Hola"
- *   - variables de cadena (identificadores):               nombre
- *   - el operador de concatenacion:                        +
+ *   operando + operando  ->  EXPR
+ *   ( operando )         ->  EXPR
  *
- * y por parentesis de agrupacion. Ejemplo de expresion valida:
- *
- *   "Hola, " + nombre + ("!" + salto)
- *
- * El analisis se hace en una sola pasada. La expresion se divide en
- * tokens y cada token se inserta en la pila (push). Cada vez que la cima
- * forma un patron completo, ese patron se retira con pop y se reemplaza
- * por un solo nodo EXPR:
- *
- *   operando + operando   ->  EXPR
- *   ( operando )          ->  EXPR
- *
- * La cadena es valida si al terminar la pila contiene un unico operando.
+ * La cadena es valida si al final queda un solo operando en la pila.
  */
 public class AnalizadorCadenas {
 
-    private Pila pila;              // pila de tokens pendientes de reducir
-    private boolean mostrarTraza;   // true para imprimir el estado paso a paso
+    private Pila pila = new Pila();   // tokens pendientes de reducir
+    private boolean mostrarTraza;     // imprime cada paso si es true
 
-    private String expresion;       // expresion que se esta analizando
-    private int indice;             // posicion del siguiente caracter por leer
-    private String errorLexico;     // mensaje si un token esta mal escrito
-    private int posicionError;      // posicion del error lexico
+    private String expresion;         // texto que se esta leyendo
+    private int indice;               // siguiente caracter por leer
+    private String errorLexico;       // error al leer un token, si lo hay
+    private int posicionError;
 
-    private int literales;          // cadenas literales encontradas
-    private int variables;          // variables de cadena encontradas
-    private int operadores;         // operadores + encontrados
+    private int literales, variables, operadores;   // contadores de tokens
 
-    public AnalizadorCadenas() {
-        this.pila = new Pila();
-    }
-
-    /** Devuelve la pila utilizada, para poder consultar su estado final. */
-    public Pila getPila() {
-        return pila;
-    }
-
-    /**
-     * Analiza la expresion recibida.
-     *
-     * @param expresion    cadena de impresion por revisar
-     * @param mostrarTraza si es true, imprime el estado de la pila en cada paso
-     * @return true si la expresion es valida, false si tiene algun error
-     */
+    /** Analiza la expresion y devuelve true si es valida. */
     public boolean analizar(String expresion, boolean mostrarTraza) {
         this.mostrarTraza = mostrarTraza;
-        this.literales = 0;
-        this.variables = 0;
-        this.operadores = 0;
+        literales = variables = operadores = 0;
         iniciarLectura(expresion);
         pila.vaciar();
 
-        Nodo token = siguienteToken();
-        while (token != null) {
-            int pos = token.getPosicion();
-
-            switch (token.getTipo()) {
-                case LITERAL:
-                case VARIABLE:
-                case PARENTESIS_APERTURA:
-                    // Un operando o una apertura solo puede ir al inicio,
-                    // despues de un + o despues de otro parentesis de apertura.
-                    if (!esperaOperando()) {
-                        return error("falta el operador + antes de " + token.getLexema()
-                                + " (" + token.getTipo().getDescripcion() + ")", pos);
-                    }
-                    pila.push(token);
-                    traza("push " + token.getLexema() + "  ("
-                            + token.getTipo().getDescripcion() + ", posicion " + pos + ")");
-                    if (token.getTipo().esOperando()) {
-                        reducirConcatenacion();
-                    }
-                    break;
-
-                case CONCATENACION:
-                    if (!cimaEsOperando()) {
-                        return error("el operador + no tiene un operando a su izquierda", pos);
-                    }
-                    operadores++;
-                    pila.push(token);
-                    traza("push +  (operador de concatenacion, posicion " + pos + ")");
-                    break;
-
-                case PARENTESIS_CIERRE:
-                    if (!cimaEsOperando()) {
-                        return error("falta un operando antes del parentesis de cierre", pos);
-                    }
-                    if (!cerrarParentesis()) {
-                        return error("el parentesis de cierre no tiene apertura", pos);
-                    }
-                    traza("lee ) en la posicion " + pos
-                            + ": pop del operando y del (, push EXPR");
-                    reducirConcatenacion();
-                    break;
-
-                default:
-                    return error("token inesperado", pos);
+        for (Nodo token = siguienteToken(); token != null; token = siguienteToken()) {
+            if (!procesar(token)) {
+                return false;
             }
-            token = siguienteToken();
         }
-
         if (errorLexico != null) {
             return error(errorLexico, posicionError);
         }
         return verificarEstadoFinal();
     }
 
-    /**
-     * Convierte un texto en un solo token. Se usa en el menu para insertar
-     * tokens en la pila de forma manual.
-     *
-     * @return el token, o null si el texto no corresponde a exactamente un token
-     */
+    /** Convierte un texto en un solo token, o devuelve null si no lo es. */
     public Nodo convertirEnToken(String texto) {
         iniciarLectura(texto);
         Nodo token = siguienteToken();
@@ -130,11 +50,54 @@ public class AnalizadorCadenas {
         return token;
     }
 
-    // ------------------------------------------------------------------
-    // Operaciones sobre la pila
-    // ------------------------------------------------------------------
+    // ---------------------------------------------------------------- pila
 
-    /** Indica si en este punto de la expresion corresponde un operando. */
+    /** Aplica a la pila la operacion que corresponde al token. */
+    private boolean procesar(Nodo token) {
+        int pos = token.getPosicion();
+
+        switch (token.getTipo()) {
+            case LITERAL:
+            case VARIABLE:
+            case PARENTESIS_APERTURA:
+                if (!esperaOperando()) {
+                    return error("falta el operador + antes de " + token.getLexema()
+                            + " (" + token.getTipo().getDescripcion() + ")", pos);
+                }
+                pila.push(token);
+                traza("push " + token.getLexema() + "  ("
+                        + token.getTipo().getDescripcion() + ", posicion " + pos + ")");
+                if (token.getTipo().esOperando()) {
+                    reducirConcatenacion();
+                }
+                return true;
+
+            case CONCATENACION:
+                if (!cimaEsOperando()) {
+                    return error("el operador + no tiene un operando a su izquierda", pos);
+                }
+                operadores++;
+                pila.push(token);
+                traza("push +  (operador de concatenacion, posicion " + pos + ")");
+                return true;
+
+            case PARENTESIS_CIERRE:
+                if (!cimaEsOperando()) {
+                    return error("falta un operando antes del parentesis de cierre", pos);
+                }
+                if (!cerrarParentesis()) {
+                    return error("el parentesis de cierre no tiene apertura", pos);
+                }
+                traza("lee ) en la posicion " + pos + ": pop del operando y del (, push EXPR");
+                reducirConcatenacion();
+                return true;
+
+            default:
+                return error("token inesperado", pos);
+        }
+    }
+
+    /** Hay que leer un operando al inicio, despues de un + o de un (. */
     private boolean esperaOperando() {
         Nodo cima = pila.peek();
         return cima == null
@@ -142,38 +105,27 @@ public class AnalizadorCadenas {
                 || cima.getTipo() == TipoToken.PARENTESIS_APERTURA;
     }
 
-    /** Indica si la cima de la pila es un operando. */
     private boolean cimaEsOperando() {
         Nodo cima = pila.peek();
         return cima != null && cima.getTipo().esOperando();
     }
 
-    /**
-     * Si la cima tiene la forma  operando + operando , retira esos tres
-     * nodos e inserta un solo nodo EXPR que los representa.
-     */
+    /** Si la cima es  operando + operando , la reemplaza por un EXPR. */
     private void reducirConcatenacion() {
         Nodo derecho = pila.pop();
         Nodo operador = pila.peek();
         if (operador == null || operador.getTipo() != TipoToken.CONCATENACION) {
-            pila.push(derecho);   // no hay nada que reducir: se deja como estaba
+            pila.push(derecho);   // no hay nada que reducir
             return;
         }
-        pila.pop();               // retira el +
+        pila.pop();
         Nodo izquierdo = pila.pop();
         pila.push(new Nodo(TipoToken.EXPRESION,
-                izquierdo.getLexema() + " + " + derecho.getLexema(),
-                izquierdo.getPosicion()));
+                izquierdo.getLexema() + " + " + derecho.getLexema(), izquierdo.getPosicion()));
         traza("pop de operando, + y operando, push EXPR");
     }
 
-    /**
-     * Atiende un parentesis de cierre: la cima debe ser un operando y debajo
-     * debe estar el parentesis de apertura. Ambos se retiran y se inserta un
-     * nodo EXPR en su lugar.
-     *
-     * @return false si no hay un parentesis de apertura con el cual emparejar
-     */
+    /** Reemplaza  ( operando  por un EXPR. Devuelve false si no hay apertura. */
     private boolean cerrarParentesis() {
         Nodo interior = pila.pop();
         Nodo apertura = pila.peek();
@@ -183,8 +135,7 @@ public class AnalizadorCadenas {
         }
         pila.pop();
         pila.push(new Nodo(TipoToken.EXPRESION,
-                "(" + interior.getLexema() + ")",
-                apertura.getPosicion()));
+                "(" + interior.getLexema() + ")", apertura.getPosicion()));
         return true;
     }
 
@@ -206,8 +157,7 @@ public class AnalizadorCadenas {
             System.out.println("  Estado final de la pila: " + pila.contenido());
             return true;
         }
-
-        // Quedo al menos un parentesis sin cerrar. Se busca el mas reciente.
+        // Quedo un parentesis sin cerrar: se informa el mas reciente.
         Nodo nodo = pila.pop();
         while (nodo.getTipo() != TipoToken.PARENTESIS_APERTURA) {
             nodo = pila.pop();
@@ -215,27 +165,17 @@ public class AnalizadorCadenas {
         return error("el parentesis de apertura no fue cerrado", nodo.getPosicion());
     }
 
-    // ------------------------------------------------------------------
-    // Lectura de tokens
-    // ------------------------------------------------------------------
+    // ------------------------------------------------------ lectura de tokens
 
-    /** Prepara la lectura de una nueva expresion desde su primer caracter. */
     private void iniciarLectura(String texto) {
-        this.expresion = texto;
-        this.indice = 0;
-        this.errorLexico = null;
+        expresion = texto;
+        indice = 0;
+        errorLexico = null;
     }
 
-    /**
-     * Lee el siguiente token de la expresion.
-     *
-     * @return el token leido, o null si se termino la expresion o si se
-     *         encontro un error (en ese caso queda guardado en errorLexico)
-     */
+    /** Lee el siguiente token. Devuelve null al terminar o si hay un error. */
     private Nodo siguienteToken() {
-        // Los espacios no forman parte de ningun token.
-        while (indice < expresion.length()
-                && (expresion.charAt(indice) == ' ' || expresion.charAt(indice) == '\t')) {
+        while (indice < expresion.length() && esEspacio(expresion.charAt(indice))) {
             indice++;
         }
         if (indice >= expresion.length()) {
@@ -246,7 +186,7 @@ public class AnalizadorCadenas {
         char c = expresion.charAt(indice);
 
         if (c == '"') {
-            int cierre = buscarComillaDeCierre(inicio + 1);
+            int cierre = expresion.indexOf('"', inicio + 1);   // busqueda lineal
             if (cierre == -1) {
                 return errorDeLectura("la comilla de apertura no fue cerrada", inicio);
             }
@@ -254,19 +194,11 @@ public class AnalizadorCadenas {
             literales++;
             return new Nodo(TipoToken.LITERAL, expresion.substring(inicio, indice), inicio);
         }
-        if (c == '(') {
+        if (c == '(' || c == ')' || c == '+') {
             indice++;
-            return new Nodo(TipoToken.PARENTESIS_APERTURA, "(", inicio);
+            return new Nodo(tipoDeSimbolo(c), String.valueOf(c), inicio);
         }
-        if (c == ')') {
-            indice++;
-            return new Nodo(TipoToken.PARENTESIS_CIERRE, ")", inicio);
-        }
-        if (c == '+') {
-            indice++;
-            return new Nodo(TipoToken.CONCATENACION, "+", inicio);
-        }
-        if (esInicioDeVariable(c)) {
+        if (Character.isLetter(c) || c == '_') {
             while (indice < expresion.length() && esParteDeVariable(expresion.charAt(indice))) {
                 indice++;
             }
@@ -276,27 +208,26 @@ public class AnalizadorCadenas {
         return errorDeLectura("caracter no permitido '" + c + "'", inicio);
     }
 
-    /** Busca la comilla que cierra una cadena literal. Devuelve -1 si no existe. */
-    private int buscarComillaDeCierre(int desde) {
-        for (int i = desde; i < expresion.length(); i++) {
-            if (expresion.charAt(i) == '"') {
-                return i;
-            }
+    private TipoToken tipoDeSimbolo(char c) {
+        if (c == '(') {
+            return TipoToken.PARENTESIS_APERTURA;
         }
-        return -1;
+        if (c == ')') {
+            return TipoToken.PARENTESIS_CIERRE;
+        }
+        return TipoToken.CONCATENACION;
     }
 
-    /** Una variable de cadena inicia con letra o guion bajo. */
-    private boolean esInicioDeVariable(char c) {
-        return Character.isLetter(c) || c == '_';
+    private boolean esEspacio(char c) {
+        return c == ' ' || c == '\t';
     }
 
-    /** Despues del primer caracter, una variable admite letras, digitos y guion bajo. */
+    /** Una variable admite letras, digitos y guion bajo. */
     private boolean esParteDeVariable(char c) {
         return Character.isLetterOrDigit(c) || c == '_';
     }
 
-    /** Guarda un error de lectura y detiene la lectura de tokens. */
+    /** Guarda el error de lectura y detiene la lectura. */
     private Nodo errorDeLectura(String mensaje, int posicion) {
         errorLexico = mensaje;
         posicionError = posicion;
@@ -304,17 +235,14 @@ public class AnalizadorCadenas {
         return null;
     }
 
-    // ------------------------------------------------------------------
-    // Mensajes
-    // ------------------------------------------------------------------
+    // --------------------------------------------------------------- mensajes
 
-    /** Informa un error indicando la posicion exacta y devuelve false. */
+    /** Muestra el error con su posicion y devuelve false. */
     private boolean error(String mensaje, int posicion) {
         System.out.println("ERROR en la posicion " + posicion + ": " + mensaje + ".");
         return false;
     }
 
-    /** Imprime el paso realizado y el estado de la pila, si la traza esta activa. */
     private void traza(String paso) {
         if (mostrarTraza) {
             System.out.println("  " + paso);

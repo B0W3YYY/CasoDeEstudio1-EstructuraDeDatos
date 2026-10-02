@@ -1,34 +1,20 @@
 /**
- * Pila de tokens implementada con nodos enlazados (sin usar librerias de
- * colecciones).
- *
- * La pila sigue la politica LIFO (Last In, First Out): el ultimo token
- * que entra es el primero que sale. Todas las operaciones trabajan
- * unicamente sobre la cima, por lo que su costo es constante O(1).
+ * Pila de tokens con nodos enlazados (LIFO).
+ * Todas las operaciones trabajan sobre la cima, con costo O(1).
  */
 public class Pila {
 
-    private Nodo cima;   // nodo que esta en la parte superior de la pila
-    private int tamano;  // cantidad de nodos almacenados
+    private Nodo cima;   // nodo superior
+    private int tamano;  // cantidad de nodos
 
-    /** Crea una pila vacia. */
-    public Pila() {
-        this.cima = null;
-        this.tamano = 0;
-    }
-
-    /** Inserta un token en la cima de la pila. */
+    /** Inserta un token en la cima. */
     public void push(Nodo nuevo) {
-        nuevo.setSiguiente(cima);  // el nuevo nodo apunta a la cima anterior
-        cima = nuevo;              // el nuevo nodo pasa a ser la cima
+        nuevo.setSiguiente(cima);
+        cima = nuevo;
         tamano++;
     }
 
-    /**
-     * Elimina y devuelve el nodo que esta en la cima.
-     * Devuelve null si la pila esta vacia, para que quien llame al metodo
-     * pueda avisar al usuario sin que el programa se detenga.
-     */
+    /** Retira y devuelve la cima, o null si la pila esta vacia. */
     public Nodo pop() {
         if (estaVacia()) {
             return null;
@@ -40,48 +26,33 @@ public class Pila {
         return retirado;
     }
 
-    /** Devuelve el nodo de la cima sin retirarlo, o null si la pila esta vacia. */
-    public Nodo peek() {
-        return cima;
-    }
+    /** Devuelve la cima sin retirarla, o null si la pila esta vacia. */
+    public Nodo peek() { return cima; }
 
-    /** Indica si la pila no contiene elementos. */
-    public boolean estaVacia() {
-        return cima == null;
-    }
+    public boolean estaVacia() { return cima == null; }
 
-    /** Devuelve la cantidad de elementos almacenados. */
-    public int getTamano() {
-        return tamano;
-    }
+    public int getTamano() { return tamano; }
 
-    /** Retira todos los elementos de la pila. */
     public void vaciar() {
         cima = null;
         tamano = 0;
     }
 
-    /**
-     * Devuelve el contenido de la pila como texto, de la cima hacia la base.
-     * Ejemplo: [cima] + | "Hola, " [base]
-     */
+    /** Contenido de la cima a la base, por ejemplo: [cima] + | "Hola" [base] */
     public String contenido() {
         if (estaVacia()) {
             return "(pila vacia)";
         }
         String texto = "[cima] ";
-        Nodo actual = cima;
-        while (actual != null) {
-            texto = texto + actual;
+        for (Nodo actual = cima; actual != null; actual = actual.getSiguiente()) {
+            texto += actual;
             if (actual.getSiguiente() != null) {
-                texto = texto + " | ";
+                texto += " | ";
             }
-            actual = actual.getSiguiente();
         }
         return texto + " [base]";
     }
 
-    /** Muestra en consola el estado actual de la pila. */
     public void mostrar() {
         System.out.println("Pila (" + tamano + " elemento(s)): " + contenido());
     }

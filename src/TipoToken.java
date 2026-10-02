@@ -1,11 +1,4 @@
-/**
- * Tipos de token que puede contener una cadena de impresion.
- *
- * Los tres primeros son los que pide la consigna: cadenas literales,
- * variables de cadena y el operador de concatenacion. Los parentesis
- * permiten agrupar, y EXPRESION representa una parte de la cadena que
- * ya fue reconocida como correcta y se reemplazo por un solo nodo.
- */
+/** Tipos de token que puede tener una cadena de impresion. */
 public enum TipoToken {
 
     LITERAL("cadena literal"),
@@ -13,19 +6,17 @@ public enum TipoToken {
     CONCATENACION("operador de concatenacion"),
     PARENTESIS_APERTURA("parentesis de apertura"),
     PARENTESIS_CIERRE("parentesis de cierre"),
-    EXPRESION("expresion reconocida");
+    EXPRESION("expresion reconocida");   // parte de la cadena ya validada
 
-    private final String descripcion;   // nombre legible para los mensajes
+    private final String descripcion;
 
     TipoToken(String descripcion) {
         this.descripcion = descripcion;
     }
 
-    public String getDescripcion() {
-        return descripcion;
-    }
+    public String getDescripcion() { return descripcion; }
 
-    /** Indica si el token puede actuar como operando de una concatenacion. */
+    /** Indica si el token puede ir a un lado de un +. */
     public boolean esOperando() {
         return this == LITERAL || this == VARIABLE || this == EXPRESION;
     }

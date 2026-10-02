@@ -1,17 +1,22 @@
 import java.util.Scanner;
 
-/**
- * Entorno de ejecucion del programa.
- *
- * Presenta un menu que permite analizar cadenas de impresion con la pila
- * desarrollada, observar el analisis paso a paso, ejecutar un conjunto de
- * ejemplos de prueba y operar la pila de forma manual.
- */
+/** Entorno de ejecucion: menu para analizar cadenas y operar la pila. */
 public class Main {
 
     private static Scanner entrada = new Scanner(System.in);
-    private static Pila pilaManual = new Pila();   // pila para las pruebas manuales
-    private static AnalizadorCadenas lector = new AnalizadorCadenas();   // reconoce los tokens escritos a mano
+    private static Pila pilaManual = new Pila();                        // pila del submenu
+    private static AnalizadorCadenas lector = new AnalizadorCadenas();  // reconoce tokens
+
+    private static final String[] EJEMPLOS = {
+        "\"Hola, \" + nombre + \"!\"",
+        "\"Total: \" + (moneda + monto)",
+        "mensaje",
+        "\"Hola\" + ",
+        "\"Hola\" nombre",
+        "\"Hola, \" + nombre)",
+        "(\"a\" + b",
+        "\"Saldo: @\" + 5saldo"
+    };
 
     public static void main(String[] args) {
         System.out.println("===================================================");
@@ -22,25 +27,16 @@ public class Main {
         boolean continuar = true;
         while (continuar) {
             menu();
-            if (!hayMasEntrada()) {        // no queda texto por leer: se termina el programa
+            if (!entrada.hasNextLine()) {   // se acabo la entrada
                 System.out.println();
                 System.out.println("No hay mas datos de entrada. Programa finalizado.");
                 break;
             }
-            int opcion = leerOpcion();
-            switch (opcion) {
-                case 1:
-                    analizarCadena(false);
-                    break;
-                case 2:
-                    analizarCadena(true);
-                    break;
-                case 3:
-                    ejecutarEjemplos();
-                    break;
-                case 4:
-                    menuPilaManual();
-                    break;
+            switch (leerOpcion()) {
+                case 1: analizarCadena(false); break;
+                case 2: analizarCadena(true); break;
+                case 3: ejecutarEjemplos(); break;
+                case 4: menuPilaManual(); break;
                 case 5:
                     System.out.println("\nPrograma finalizado. Hasta pronto.");
                     continuar = false;
@@ -52,7 +48,6 @@ public class Main {
         entrada.close();
     }
 
-    /** Muestra las opciones disponibles. */
     private static void menu() {
         System.out.println("\n--------------------- MENU ------------------------");
         System.out.println(" 1. Analizar una cadena de impresion");
@@ -64,30 +59,24 @@ public class Main {
         System.out.print("Seleccione una opcion: ");
     }
 
-    /** Indica si todavia queda texto por leer en la entrada estandar. */
-    private static boolean hayMasEntrada() {
-        return entrada.hasNextLine();
-    }
+    // --------------------------------------------------------------- entrada
 
-    /** Lee una linea de texto; devuelve una cadena vacia si ya no hay entrada. */
+    /** Lee una linea, o devuelve "" si ya no hay entrada. */
     private static String leerLinea() {
-        if (!entrada.hasNextLine()) {
-            return "";
-        }
-        return entrada.nextLine();
+        return entrada.hasNextLine() ? entrada.nextLine() : "";
     }
 
-    /** Lee la opcion del usuario y devuelve -1 si el texto no es un numero. */
+    /** Lee un numero de opcion, o devuelve -1 si el texto no es un numero. */
     private static int leerOpcion() {
-        String texto = leerLinea().trim();
         try {
-            return Integer.parseInt(texto);
+            return Integer.parseInt(leerLinea().trim());
         } catch (NumberFormatException e) {
             return -1;
         }
     }
 
-    /** Solicita una expresion al usuario y la analiza. */
+    // ------------------------------------------------------------- analisis
+
     private static void analizarCadena(boolean conTraza) {
         System.out.println("\nEscriba la cadena de impresion.");
         System.out.println("Ejemplo: \"Hola, \" + nombre + \"!\"");
@@ -98,33 +87,20 @@ public class Main {
             System.out.println("ERROR: no se escribio ninguna expresion.");
             return;
         }
-
         System.out.println("\nAnalizando: " + expresion);
-        AnalizadorCadenas analizador = new AnalizadorCadenas();
-        analizador.analizar(expresion, conTraza);
+        new AnalizadorCadenas().analizar(expresion, conTraza);
     }
 
-    /** Analiza un conjunto fijo de expresiones validas e invalidas. */
     private static void ejecutarEjemplos() {
-        String[] ejemplos = {
-            "\"Hola, \" + nombre + \"!\"",
-            "\"Total: \" + (moneda + monto)",
-            "mensaje",
-            "\"Hola\" + ",
-            "\"Hola\" nombre",
-            "\"Hola, \" + nombre)",
-            "(\"a\" + b",
-            "\"Saldo: @\" + 5saldo"
-        };
-
         AnalizadorCadenas analizador = new AnalizadorCadenas();
-        for (int i = 0; i < ejemplos.length; i++) {
-            System.out.println("\nEjemplo " + (i + 1) + ": " + ejemplos[i]);
-            analizador.analizar(ejemplos[i], false);
+        for (int i = 0; i < EJEMPLOS.length; i++) {
+            System.out.println("\nEjemplo " + (i + 1) + ": " + EJEMPLOS[i]);
+            analizador.analizar(EJEMPLOS[i], false);
         }
     }
 
-    /** Submenu que permite usar directamente las operaciones de la pila. */
+    // ---------------------------------------------------------- pila manual
+
     private static void menuPilaManual() {
         boolean enSubmenu = true;
         while (enSubmenu) {
@@ -138,56 +114,56 @@ public class Main {
             System.out.println("---------------------------------------------------");
             System.out.print("Seleccione una opcion: ");
 
-            if (!hayMasEntrada()) {        // no queda texto por leer: se vuelve al menu principal
+            if (!entrada.hasNextLine()) {   // se acabo la entrada
                 System.out.println();
                 return;
             }
-            int opcion = leerOpcion();
-            switch (opcion) {
-                case 1:
-                    System.out.println("Escriba un token: una cadena literal (\"Hola\"),");
-                    System.out.print("una variable (nombre), + o un parentesis: ");
-                    Nodo token = lector.convertirEnToken(leerLinea());
-                    if (token == null) {
-                        System.out.println("ERROR: debe escribir exactamente un token valido.");
-                    } else {
-                        pilaManual.push(token);
-                        System.out.println("Se inserto el token " + token
-                                + " (" + token.getTipo().getDescripcion() + ").");
-                        pilaManual.mostrar();
-                    }
-                    break;
-                case 2:
-                    Nodo retirado = pilaManual.pop();
-                    if (retirado == null) {
-                        System.out.println("La pila esta vacia, no hay nada que retirar.");
-                    } else {
-                        System.out.println("Se retiro el token " + retirado + ".");
-                        pilaManual.mostrar();
-                    }
-                    break;
-                case 3:
-                    Nodo cima = pilaManual.peek();
-                    if (cima == null) {
-                        System.out.println("La pila esta vacia, no hay cima.");
-                    } else {
-                        System.out.println("En la cima esta el token " + cima
-                                + " (" + cima.getTipo().getDescripcion() + ").");
-                    }
-                    break;
-                case 4:
-                    pilaManual.mostrar();
-                    break;
+            switch (leerOpcion()) {
+                case 1: insertarToken(); break;
+                case 2: retirarToken(); break;
+                case 3: consultarCima(); break;
+                case 4: pilaManual.mostrar(); break;
                 case 5:
                     pilaManual.vaciar();
                     System.out.println("La pila quedo vacia.");
                     break;
-                case 6:
-                    enSubmenu = false;
-                    break;
-                default:
-                    System.out.println("Opcion invalida. Elija un numero del 1 al 6.");
+                case 6: enSubmenu = false; break;
+                default: System.out.println("Opcion invalida. Elija un numero del 1 al 6.");
             }
         }
+    }
+
+    private static void insertarToken() {
+        System.out.println("Escriba un token: una cadena literal (\"Hola\"),");
+        System.out.print("una variable (nombre), + o un parentesis: ");
+        Nodo token = lector.convertirEnToken(leerLinea());
+        if (token == null) {
+            System.out.println("ERROR: debe escribir exactamente un token valido.");
+            return;
+        }
+        pilaManual.push(token);
+        System.out.println("Se inserto el token " + token
+                + " (" + token.getTipo().getDescripcion() + ").");
+        pilaManual.mostrar();
+    }
+
+    private static void retirarToken() {
+        Nodo retirado = pilaManual.pop();
+        if (retirado == null) {
+            System.out.println("La pila esta vacia, no hay nada que retirar.");
+            return;
+        }
+        System.out.println("Se retiro el token " + retirado + ".");
+        pilaManual.mostrar();
+    }
+
+    private static void consultarCima() {
+        Nodo cima = pilaManual.peek();
+        if (cima == null) {
+            System.out.println("La pila esta vacia, no hay cima.");
+            return;
+        }
+        System.out.println("En la cima esta el token " + cima
+                + " (" + cima.getTipo().getDescripcion() + ").");
     }
 }
